@@ -34,7 +34,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature temp(&oneWire);
 
 // Define the sensitivity of the current sensor (mV/A)
-float sensitivity = 100;  // 100mV/A for ACS712 20A
+float sensitivity = 0.100;  // 100mV/A for ACS712 20A
 
 // Floats for ADC voltage & Input voltage
 float pv_avg_volts = 0.0;
@@ -84,17 +84,17 @@ void setup() {
 }
 
 void loop() {
-  // ReadSensors();
+  ReadSensors();
 
-  onReceive(LoRa.parsePacket());
+  // onReceive(LoRa.parsePacket());
   // LDR();
-  // delay(2000);
+  delay(1000);
 }
 
-void LDR() {
+void LDR(float amps) {
   ldrValue = analogRead(LED_LDRpin);  //reads the value of the sensor [0-1023]
 
-  if (ldrValue <= ldr_threshold)  //checks if ambient light is normal
+  if (ldrValue <= ldr_threshold && amps > 0.0)  //checks if ambient light is normal
   {
     Serial.print(ldrValue);
     Serial.println(" | LAMP ON");
@@ -173,8 +173,12 @@ void ReadSensors() {
     // SOLAR PANEL ADC
     pv_v_digital = (pv_v_analog * ref_voltage) / 1024.0;
     pv_c_digital = (pv_c_analog * ref_voltage) / 1024.0;
-    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.29;
-    pv_amps = (pv_c_digital - 2.5) / sensitivity;
+    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.21;     //offset 0.21V
+    pv_amps = (2.33 - pv_c_digital) / sensitivity;           //offset when 0 current: 2.33V 
+    
+    if (pv_volts <= 0.0) {
+      pv_volts = 0.0;
+    }
     if (pv_amps <= 0.0) {
       pv_amps = 0.0;
     }
@@ -182,8 +186,12 @@ void ReadSensors() {
     // BATTERY ADC
     bat_v_digital = (bat_v_analog * ref_voltage) / 1024.0;
     bat_c_digital = (bat_c_analog * ref_voltage) / 1024.0;
-    bat_volts = (bat_v_digital / (R2 / (R1 + R2))) - 0.29;
-    bat_amps = (bat_c_digital - 2.5) / 100;
+    bat_volts = (bat_v_digital / (R2 / (R1 + R2))) - 0.17;    //offset 0.17V
+    bat_amps = (2.34 - bat_c_digital) / sensitivity;          //offset when 0 current: 2.34V 
+
+    if (bat_volts <= 0.0) {
+      bat_volts = 0.0;
+    }
     if (bat_amps <= 0.0) {
       bat_amps = 0.0;
     }
@@ -204,22 +212,23 @@ void ReadSensors() {
   bat_avg_amps = (BATsample_C) / 150;
   bat_power = bat_avg_volts * bat_avg_amps;
 
+  Serial.println(bat_avg_volts);
+
   avg_temp = (sample_T) / 150;
   avg_lux = (sample_L) / 150;
 
-  if (pv_avg_volts > 0.0) {
+  if (pv_power > 0.0 || pv_avg_volts > 1.0) {
     charging = 1.0;
     batt_level = (bat_avg_volts - 2.50) / (3.65 - 2.50) * 100;
     if (batt_level > 100.0) {
       batt_level = 100.0;
     }
-  }
-  if (pv_avg_volts <= 0.0) {
+  } else {
     charging = 0.0;
     dSOC();
   }
 
-  LDR();
+  LDR(bat_avg_amps);
 
   // Print results to Serial Monitor to 2 decimal places
   Serial.print("(pV) = ");

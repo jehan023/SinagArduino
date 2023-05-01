@@ -84,11 +84,10 @@ void setup() {
 }
 
 void loop() {
-  ReadSensors();
-
-  // onReceive(LoRa.parsePacket());
-  // LDR();
-  delay(1000);
+  onReceive(LoRa.parsePacket());
+  
+  // ReadSensors();
+  // delay(1000);
 }
 
 void LDR(float amps) {
@@ -173,7 +172,7 @@ void ReadSensors() {
     // SOLAR PANEL ADC
     pv_v_digital = (pv_v_analog * ref_voltage) / 1024.0;
     pv_c_digital = (pv_c_analog * ref_voltage) / 1024.0;
-    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.22;   //offset 0.22V
+    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.05;   //offset 0.22V
     pv_amps = (2.33 - pv_c_digital) / sensitivity;         //offset when 0 current: 2.33V
     
     if (pv_volts <= 0.0) {
@@ -212,7 +211,7 @@ void ReadSensors() {
   bat_avg_amps = (BATsample_C) / 150;
   bat_power = bat_avg_volts * bat_avg_amps;
 
-  Serial.println(bat_avg_volts);
+  // Serial.println(bat_avg_volts);
 
   avg_temp = (sample_T) / 150;
   avg_lux = (sample_L) / 150;

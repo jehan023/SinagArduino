@@ -53,7 +53,7 @@ String NodeSheet = "";
 
 File dataFile;
 RTC_DS3231 rtc;
-// DateTime now;
+DateTime now;
 
 void setup() {
   Serial.begin(115200);
@@ -77,69 +77,70 @@ void setup() {
 }
 
 void loop() {
-  // now = rtc.now();
+  Serial.println(rtc.now().timestamp());
+  delay(2000);
 
-  if (WiFi.status() == WL_CONNECTED) {
-    for (int i = 1; i <= 3; i++) {
-      String FileName = "SL" + String(i) + ".txt";
-      if (SD.exists(FileName)) {
-        readSDCard(FileName, "SL" + String(i));
-      }
-    }
-  }
+  // if (WiFi.status() == WL_CONNECTED) {
+  //   for (int i = 1; i <= 3; i++) {
+  //     String FileName = "SL" + String(i) + ".txt";
+  //     if (SD.exists(FileName)) {
+  //       readSDCard(FileName, "SL" + String(i));
+  //     }
+  //   }
+  // }
 
-  unsigned long currentMillis = millis();
-  currentsecs = currentMillis / 1000;
+  // unsigned long currentMillis = millis();
+  // currentsecs = currentMillis / 1000;
 
-  if ((currentsecs - previoussecs) >= 5) {
-    Secs = Secs + 1;
-    if (Secs > 15) {
-      Secs = 0;
-      if ((currentsecs - lastSend) >= 300) {
-        rN1 = 0;
-        rN2 = 0;
-        rN3 = 0;
-        lastSend = currentsecs;
-        Serial.print("lastSend: ");
-        Serial.println(lastSend);
-      }
-    }
-    if ((Secs >= 1) && (Secs <= 5)) {
-      if (rN1 == 0) {
-        sendMessage("SL1", MasterNode, Node1);
-        Serial.println("Send to Node 1");
-      } else {
-        Serial.println("No send NODE 1");
-      }
-    }
-    if ((Secs >= 6) && (Secs <= 10)) {
-      if (rN2 == 0) {
-        sendMessage("SL2", MasterNode, Node2);
-        Serial.println("Send to Node 2");
-      } else {
-        Serial.println("No send NODE 2");
-      }
-    }
-    if ((Secs >= 11) && (Secs <= 15)) {
-      if (rN3 == 0) {
-        sendMessage("SL3", MasterNode, Node3);
-        Serial.println("Send to Node 3");
-      } else {
-        Serial.println("No send NODE 3");
-      }
-    }
-    previoussecs = currentsecs;
-  }
-  onReceive(LoRa.parsePacket());
+  // if ((currentsecs - previoussecs) >= 5) {
+  //   Secs = Secs + 1;
+  //   if (Secs > 15) {
+  //     Secs = 0;
+  //     if ((currentsecs - lastSend) >= 300) {
+  //       rN1 = 0;
+  //       rN2 = 0;
+  //       rN3 = 0;
+  //       lastSend = currentsecs;
+  //       Serial.print("lastSend: ");
+  //       Serial.println(lastSend);
+  //     }
+  //   }
+  //   if ((Secs >= 1) && (Secs <= 5)) {
+  //     if (rN1 == 0) {
+  //       sendMessage("SL1", MasterNode, Node1);
+  //       Serial.println("Send to Node 1");
+  //     } else {
+  //       Serial.println("No send NODE 1");
+  //     }
+  //   }
+  //   if ((Secs >= 6) && (Secs <= 10)) {
+  //     if (rN2 == 0) {
+  //       sendMessage("SL2", MasterNode, Node2);
+  //       Serial.println("Send to Node 2");
+  //     } else {
+  //       Serial.println("No send NODE 2");
+  //     }
+  //   }
+  //   if ((Secs >= 11) && (Secs <= 15)) {
+  //     if (rN3 == 0) {
+  //       sendMessage("SL3", MasterNode, Node3);
+  //       Serial.println("Send to Node 3");
+  //     } else {
+  //       Serial.println("No send NODE 3");
+  //     }
+  //   }
+  //   previoussecs = currentsecs;
+  // }
+  // onReceive(LoRa.parsePacket());
 
-  if (WiFi.status() != WL_CONNECTED) {
-    // Serial.println("WiFi NOT Connected");
-    WiFi.begin(ssid, password);
-    if (WiFi.status() == WL_CONNECTED) {
-      client.setInsecure();
-    }
-  }
-  delay(100);
+  // if (WiFi.status() != WL_CONNECTED) {
+  //   // Serial.println("WiFi NOT Connected");
+  //   WiFi.begin(ssid, password);
+  //   if (WiFi.status() == WL_CONNECTED) {
+  //     client.setInsecure();
+  //   }
+  // }
+  // delay(100);
 }
 
 void initWIFI() {
@@ -179,6 +180,7 @@ void initRTC() {
   }
   Serial.println("RTC working.");
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  // rtc.adjust(DateTime(now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second()));
   // now = rtc.now();
   Serial.println(rtc.now().timestamp());
 }
@@ -439,7 +441,7 @@ void saveToSD(String node, float pvv, float pvp, float bv, float bl, float bp, f
   if (dataFile) {
     DateTime now = rtc.now();
 
-    dataFile.println(rtc.now().timestamp() + " " + pvv + " " + pvp + " " + bv + " " + bl + " " + bp + " " + ls + " " + l + " " + t + " " + snr + " " + rssi + " " + ch);  // write some data to the file
+    dataFile.println(now.timestamp() + " " + pvv + " " + pvp + " " + bv + " " + bl + " " + bp + " " + ls + " " + l + " " + t + " " + snr + " " + rssi + " " + ch);  // write some data to the file
     dataFile.close();                                                                                                                                               // close the file
     Serial.println("Successfully insert data.");
   } else {

@@ -85,7 +85,7 @@ void setup() {
 
 void loop() {
   onReceive(LoRa.parsePacket());
-  
+
   // ReadSensors();
   // delay(1000);
 }
@@ -93,7 +93,7 @@ void loop() {
 void LDR(float amps) {
   ldrValue = analogRead(LED_LDRpin);  //reads the value of the sensor [0-1023]
 
-  if (ldrValue <= ldr_threshold && amps > 0.0)  //checks if ambient light is normal
+  if (ldrValue <= ldr_threshold || amps > 0.0)  //checks if ambient light is normal
   {
     Serial.print(ldrValue);
     Serial.println(" | LAMP ON");
@@ -106,27 +106,27 @@ void LDR(float amps) {
 }
 
 void dSOC() {
-  if (bat_avg_volts > 3.45) {
+  if (bat_avg_volts > 3.35) {
     batt_level = 100.0;
-  } else if (bat_avg_volts > 3.40) {
-    batt_level = 90.0;
-  } else if (bat_avg_volts > 3.35) {
-    batt_level = 80.0;
   } else if (bat_avg_volts > 3.30) {
-    batt_level = 70.0;
+    batt_level = 90.0;
   } else if (bat_avg_volts > 3.25) {
-    batt_level = 60.0;
+    batt_level = 80.0;
   } else if (bat_avg_volts > 3.20) {
-    batt_level = 50.0;
+    batt_level = 70.0;
+  } else if (bat_avg_volts > 3.15) {
+    batt_level = 60.0;
   } else if (bat_avg_volts > 3.10) {
+    batt_level = 50.0;
+  } else if (bat_avg_volts > 3.05) {
     batt_level = 40.0;
   } else if (bat_avg_volts > 3.00) {
     batt_level = 30.0;
   } else if (bat_avg_volts > 2.90) {
     batt_level = 20.0;
-  } else if (bat_avg_volts > 2.51) {
+  } else if (bat_avg_volts > 2.50) {
     batt_level = 10.0;
-  } else if (bat_avg_volts <= 2.50) {
+  } else {
     batt_level = 0.0;
   }
 }
@@ -172,10 +172,10 @@ void ReadSensors() {
     // SOLAR PANEL ADC
     pv_v_digital = (pv_v_analog * ref_voltage) / 1024.0;
     pv_c_digital = (pv_c_analog * ref_voltage) / 1024.0;
-    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.05;     //offset 0.23V
-    pv_amps = (2.33 - pv_c_digital) / sensitivity;           //offset when 0 current: 2.33V
+    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.05;  //offset 0.23V
+    pv_amps = (2.33 - pv_c_digital) / sensitivity;        //offset when 0 current: 2.33V
 
-    if (pv_volts <= 0.0) {
+    if (pv_volts <= 0.10) {
       pv_volts = 0.0;
     }
     if (pv_amps <= 0.0) {
@@ -185,12 +185,12 @@ void ReadSensors() {
     // BATTERY ADC
     bat_v_digital = (bat_v_analog * ref_voltage) / 1024.0;
     bat_c_digital = (bat_c_analog * ref_voltage) / 1024.0;
-    bat_volts = (bat_v_digital / (R2 / (R1 + R2))) - 0.20;    //offset 0.19V
-    bat_amps = (2.33 - bat_c_digital) / sensitivity;          //offset when 0 current: 2.33V
+    bat_volts = (bat_v_digital / (R2 / (R1 + R2))) - 0.20;  //offset 0.19V
+    bat_amps = (2.33 - bat_c_digital) / sensitivity;        //offset when 0 current: 2.33V
 
     // Serial.println(pv_volts);
 
-    if (bat_volts <= 0.0) {
+    if (bat_volts <= 0.10) {
       bat_volts = 0.0;
     }
     if (bat_amps <= 0.0) {
@@ -206,6 +206,9 @@ void ReadSensors() {
     delay(3);
   }
   pv_avg_volts = (PVsample_V) / 150;
+  if (pv_avg_volts <= 0.10) {
+    pv_avg_volts = 0.0;
+  }
   pv_avg_amps = (PVsample_C) / 150;
   pv_power = pv_avg_volts * pv_avg_amps;
 
@@ -216,15 +219,19 @@ void ReadSensors() {
   avg_temp = (sample_T) / 150;
   avg_lux = (sample_L) / 150;
 
-  if (pv_power > 0.0 || pv_avg_volts > 1.0) {
+  if (pv_power > 0.0 || pv_avg_volts > 3.0) {
     charging = 1.0;
-    batt_level = (bat_avg_volts - 2.50) / (3.65 - 2.50) * 100;
+    batt_level = ceil((bat_avg_volts - 2.50) / (3.65 - 2.50) * 100);
     if (batt_level > 100.0) {
       batt_level = 100.0;
     }
   } else {
     charging = 0.0;
-    dSOC();
+    // dSOC();
+    batt_level = ceil((bat_avg_volts - 2.50) / (3.40 - 2.50) * 100);
+    if (batt_level > 100.0) {
+      batt_level = 100.0;
+    }
   }
 
   LDR(bat_avg_amps);
@@ -288,13 +295,13 @@ void onReceive(int packetSize) {
     return;  // skip rest of function
   }
   Serial.println(incoming);
-  // int Val = incoming.toInt();
+  Mymessage = "";
   if (incoming == "SL3") {
     ReadSensors();
     Mymessage = Mymessage + pv_avg_volts + "," + pv_power + "," + bat_avg_volts + "," + batt_level + "," + bat_power + "," + led_status + "," + avg_temp + "," + avg_lux + "," + charging;
-    for (int i = 0; i < 5; i++) {    
+    for (int i = 0; i < 2; i++) {
       sendMessage(Mymessage, MasterNode, Node3);
-      delay(2000);
+      delay(5000);
     }
     delay(100);
     Mymessage = "";

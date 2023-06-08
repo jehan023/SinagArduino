@@ -11,8 +11,8 @@
 #define DIO0_LORA 4  //GPIO 4 - D2
 #define SS_SD 2      //GPIO 2 - D4
 
-const char* ssid = "HadjiSaidWiFi";       //HadjiSaidWiFi Jehan(7) jehanWIFI Jennie Wifi
-const char* password = "@Ljavier262013";  //@Ljavier262013 kwentomo023 jehan023 Cookiehatdog21
+const char* ssid = "Le Familla wifi";       //HadjiSaidWiFi Jehan(7) jehanWIFI Jennie Wifi
+const char* password = "Jotanyaheya231010";  //@Ljavier262013 kwentomo023 jehan023 Cookiehatdog21
 
 const char* host = "script.google.com";
 const int httpsPort = 443;
@@ -53,7 +53,10 @@ String NodeSheet = "";
 
 File dataFile;
 RTC_DS3231 rtc;
-// DateTime now;
+
+// byte prev1msgID = 0;
+// byte prev2msgID = 0;
+// byte prev3msgID = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -95,7 +98,7 @@ void loop() {
     Secs = Secs + 1;
     if (Secs > 15) {
       Secs = 0;
-      if ((currentsecs - lastSend) >= 300) {
+      if ((currentsecs - lastSend) >= 300) { //5mins interval ~ 300secs
         rN1 = 0;
         rN2 = 0;
         rN3 = 0;
@@ -179,7 +182,6 @@ void initRTC() {
   }
   Serial.println("RTC working.");
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  // now = rtc.now();
   Serial.println(rtc.now().timestamp());
 }
 
@@ -254,21 +256,23 @@ void onReceive(int packetSize) {
 
   byte incomingMsgId = LoRa.read();   // incoming msg ID
   byte incomingLength = LoRa.read();  // incoming msg length
+  
   while (LoRa.available()) {
     incoming += (char)LoRa.read();
   }
   Serial.println(String(sender) + ":" + String(recipient) + " >> " + incoming);
+
   if (incomingLength != incoming.length()) {  // check length for error
+    incoming = "";
     Serial.println("error: message length does not match length");
     return;  // skip rest of function
   }
   // if the recipient isn't this device or broadcast,
   if (recipient != MasterNode) {
+    incoming = "";
     Serial.println("This message is not for me.");
     return;  // skip rest of function
   }
-  Serial.println("RSSI: " + String(LoRa.packetRssi()));
-  Serial.println("Snr: " + String(LoRa.packetSnr()));
 
   if (sender == Node1 && rN1 == 0) {
     rN1 = 1;
@@ -396,13 +400,6 @@ void onReceive(int packetSize) {
   Serial.println(temperature);
 
   incoming = "";
-
-  // if (WiFi.status() != WL_CONNECTED) {
-  //   Serial.println("WiFi disconnected");
-  //   saveToSD(NodeSheet, pv_volts, pv_power, batt_volts, batt_level, batt_power, led_status, light, temperature, LoRa.packetSnr(), LoRa.packetRssi(), charging);
-  // } else {
-  //   saveToCloud(NodeSheet, pv_volts, pv_power, batt_volts, batt_level, batt_power, led_status, light, temperature, LoRa.packetSnr(), LoRa.packetRssi(), "0", charging);
-  // }
 }
 
 String getValue(String data, char separator, int index) {
@@ -440,7 +437,7 @@ void saveToSD(String node, float pvv, float pvp, float bv, float bl, float bp, f
     DateTime now = rtc.now();
 
     dataFile.println(rtc.now().timestamp() + " " + pvv + " " + pvp + " " + bv + " " + bl + " " + bp + " " + ls + " " + l + " " + t + " " + snr + " " + rssi + " " + ch);  // write some data to the file
-    dataFile.close();                                                                                                                                               // close the file
+    dataFile.close();                                                                                                                                                     // close the file
     Serial.println("Successfully insert data.");
   } else {
     Serial.println("File opening/creation failed!");
@@ -448,9 +445,6 @@ void saveToSD(String node, float pvv, float pvp, float bv, float bl, float bp, f
 }
 
 void readSDCard(String FileName, String node) {
-  // String FileName = "SL" + node + ".txt";
-  // dataFile = SD.open(FileName, FILE_READ);
-
   if (SD.exists(FileName)) {
     Serial.print(FileName);
     Serial.println(" exist.");

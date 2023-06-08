@@ -87,12 +87,12 @@ void loop() {
   onReceive(LoRa.parsePacket());
 
   // ReadSensors();
-  // delay(1000);
+  // delay(100);
 }
 
 void LDR(float amps) {
   ldrValue = analogRead(LED_LDRpin);  //reads the value of the sensor [0-1023]
-  //  ldr_threshold = 200.0;
+  
   if (ldrValue <= ldr_threshold || amps > 0.0)  //checks if ambient light is normal
   {
     Serial.print(ldrValue);
@@ -103,31 +103,6 @@ void LDR(float amps) {
     Serial.println(" | LAMP OFF");
     led_status = 0.0;
   }
-}
-
-void dSOC() {
-  if (bat_avg_volts > 3.35) {
-    batt_level = 100.0;
-  } else if (bat_avg_volts > 3.32) {
-    batt_level = 99.0;
-  } else if (bat_avg_volts > 3.30) {
-    batt_level = 90.0;
-  } else if (bat_avg_volts > 3.27) {
-    batt_level = 70.0;
-  } else if (bat_avg_volts > 3.25) {
-    batt_level = 40.0;
-  } else if (bat_avg_volts > 3.22) {
-    batt_level = 20.0;
-  } else if (bat_avg_volts > 3.20) {
-    batt_level = 17.0;
-  } else if (bat_avg_volts > 3.00) {
-    batt_level = 14.0;
-  } else if (bat_avg_volts > 2.50) {
-    batt_level = 9.0;
-  } else {
-    batt_level = 0.0;
-  }
-  batt_level = (bat_avg_volts - 2.50) / (3.40 - 2.50) * 100;
 }
 
 void ReadSensors() {
@@ -171,7 +146,7 @@ void ReadSensors() {
     // SOLAR PANEL ADC
     pv_v_digital = (pv_v_analog * ref_voltage) / 1024.0;
     pv_c_digital = (pv_c_analog * ref_voltage) / 1024.0;
-    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.05;  //offset 0.22V
+    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.12;  //offset 0.05V
     pv_amps = (2.33 - pv_c_digital) / sensitivity;        //offset when 0 current: 2.33V
 
     if (pv_volts <= 0.10) {
@@ -184,8 +159,8 @@ void ReadSensors() {
     // BATTERY ADC
     bat_v_digital = (bat_v_analog * ref_voltage) / 1024.0;
     bat_c_digital = (bat_c_analog * ref_voltage) / 1024.0;
-    bat_volts = (bat_v_digital / (R2 / (R1 + R2))) - 0.19;  //offset 0.19V
-    bat_amps = (2.34 - bat_c_digital) / sensitivity;        //offset when 0 current: 2.34V
+    bat_volts = (bat_v_digital / (R2 / (R1 + R2))) - 0.18;  //offset 0.19V
+    bat_amps = (2.33 - bat_c_digital) / sensitivity;        //offset when 0 current: 2.34V
 
     if (bat_volts <= 0.10) {
       bat_volts = 0.0;
@@ -213,8 +188,6 @@ void ReadSensors() {
   bat_avg_amps = (BATsample_C) / 150;
   bat_power = bat_avg_volts * bat_avg_amps;
 
-  // Serial.println(bat_avg_volts);
-
   avg_temp = (sample_T) / 150;
   avg_lux = (sample_L) / 150;
 
@@ -235,39 +208,39 @@ void ReadSensors() {
 
   LDR(bat_avg_amps);
 
-  // Print results to Serial Monitor to 2 decimal places
-  Serial.print("(pV) = ");
-  Serial.print(pv_avg_volts);
+  //   // Print results to Serial Monitor to 2 decimal places
+  //   Serial.print("(pV) = ");
+  //   Serial.print(pv_avg_volts);
 
-  Serial.print(" | (pA) : ");
-  Serial.print(pv_avg_amps);
+  //   Serial.print(" | (pA) : ");
+  //   Serial.print(pv_avg_amps);
 
-  Serial.print(" | (pW) : ");
-  Serial.print(pv_power);
+  //   Serial.print(" | (pW) : ");
+  //   Serial.print(pv_power);
 
-  Serial.print(" | (bV) = ");
-  Serial.print(bat_avg_volts);
+  //   Serial.print(" | (bV) = ");
+  //   Serial.print(bat_avg_volts);
 
-  Serial.print(" | (bA) : ");
-  Serial.print(bat_avg_amps);
+  //   Serial.print(" | (bA) : ");
+  //   Serial.print(bat_avg_amps);
 
-  Serial.print(" | (bW) : ");
-  Serial.print(bat_power);
+  //   Serial.print(" | (bW) : ");
+  //   Serial.print(bat_power);
 
-  Serial.print(" | (Level) : ");
-  Serial.print(batt_level);
+  //   Serial.print(" | (Level) : ");
+  //   Serial.print(batt_level);
 
-  Serial.print(" | (Status) : ");
-  Serial.print(led_status);
+  //   Serial.print(" | (Status) : ");
+  //   Serial.print(led_status);
 
-  Serial.print(" | (lux): ");
-  Serial.print(avg_lux);
+  //   Serial.print(" | (lux): ");
+  //   Serial.print(avg_lux);
 
-  Serial.print(" | (*C): ");
-  Serial.print(avg_temp);
+  //   Serial.print(" | (*C): ");
+  //   Serial.print(avg_temp);
 
-  Serial.print(" | (Charging): ");
-  Serial.println(charging);
+  //   Serial.print(" | (Charging): ");
+  //   Serial.println(charging);
 }
 
 
@@ -285,13 +258,11 @@ void onReceive(int packetSize) {
   Serial.println(incoming);
   if (incomingLength != incoming.length()) {  // check length for error
     Serial.println("error: message length does not match length");
-    ;
     return;  // skip rest of function
   }
   // if the recipient isn't this device or broadcast,
-  if (recipient != Node1 && recipient != MasterNode) {
+  if (recipient != Node1 && recipient != 0xBB) {
     Serial.println("This message is not for me.");
-    ;
     return;  // skip rest of function
   }
   Serial.println(incoming);

@@ -87,7 +87,7 @@ void loop() {
   onReceive(LoRa.parsePacket());
 
   // ReadSensors();
-  // delay(1000);
+  // delay(100);
 }
 
 void LDR(float amps) {
@@ -102,32 +102,6 @@ void LDR(float amps) {
     Serial.print(ldrValue);
     Serial.println(" | LAMP OFF");
     led_status = 0.0;
-  }
-}
-
-void dSOC() {
-  if (bat_avg_volts > 3.35) {
-    batt_level = 100.0;
-  } else if (bat_avg_volts > 3.30) {
-    batt_level = 90.0;
-  } else if (bat_avg_volts > 3.25) {
-    batt_level = 80.0;
-  } else if (bat_avg_volts > 3.20) {
-    batt_level = 70.0;
-  } else if (bat_avg_volts > 3.15) {
-    batt_level = 60.0;
-  } else if (bat_avg_volts > 3.10) {
-    batt_level = 50.0;
-  } else if (bat_avg_volts > 3.05) {
-    batt_level = 40.0;
-  } else if (bat_avg_volts > 3.00) {
-    batt_level = 30.0;
-  } else if (bat_avg_volts > 2.90) {
-    batt_level = 20.0;
-  } else if (bat_avg_volts > 2.50) {
-    batt_level = 10.0;
-  } else {
-    batt_level = 0.0;
   }
 }
 
@@ -156,7 +130,7 @@ void ReadSensors() {
   //float tempC = temp.getTempCByIndex(0);
 
   // Read the Analog Input of Voltage and Current Sensor
-  for (int x = 0; x < 150; x++) {  // run through loop 10x
+  for (int x = 0; x < 150; x++) {  // run through loop 150x
     // SOLAR PANEL ANALOG READ
     pv_v_analog = analogRead(PV_VoltagePin);
     pv_c_analog = analogRead(PV_CurrentPin);
@@ -172,7 +146,7 @@ void ReadSensors() {
     // SOLAR PANEL ADC
     pv_v_digital = (pv_v_analog * ref_voltage) / 1024.0;
     pv_c_digital = (pv_c_analog * ref_voltage) / 1024.0;
-    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.05;  //offset 0.23V
+    pv_volts = (pv_v_digital / (R2 / (R1 + R2))) - 0.11;  //offset 0.05V
     pv_amps = (2.33 - pv_c_digital) / sensitivity;        //offset when 0 current: 2.33V
 
     if (pv_volts <= 0.10) {
@@ -187,8 +161,6 @@ void ReadSensors() {
     bat_c_digital = (bat_c_analog * ref_voltage) / 1024.0;
     bat_volts = (bat_v_digital / (R2 / (R1 + R2))) - 0.20;  //offset 0.19V
     bat_amps = (2.33 - bat_c_digital) / sensitivity;        //offset when 0 current: 2.33V
-
-    // Serial.println(pv_volts);
 
     if (bat_volts <= 0.10) {
       bat_volts = 0.0;
@@ -285,13 +257,11 @@ void onReceive(int packetSize) {
   Serial.println(incoming);
   if (incomingLength != incoming.length()) {  // check length for error
     Serial.println("error: message length does not match length");
-    ;
     return;  // skip rest of function
   }
   // if the recipient isn't this device or broadcast,
-  if (recipient != Node3 && recipient != MasterNode) {
+  if (recipient != Node3 && recipient != 0xDD) {
     Serial.println("This message is not for me.");
-    ;
     return;  // skip rest of function
   }
   Serial.println(incoming);
